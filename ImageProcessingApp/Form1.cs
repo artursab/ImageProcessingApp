@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,7 @@ namespace ImageProcessingApp
 
     public partial class Form1 : Form
     {
-        private List<Bitmap> _bitmaps;
+        private List<Bitmap> _bitmaps = new List<Bitmap>();
         private Random _random = new Random();
 
         public Form1()
@@ -44,14 +45,19 @@ namespace ImageProcessingApp
 
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if(openFileDialog1.ShowDialog() == DialogResult.OK)
             {
+                var sw = Stopwatch.StartNew();
+                menuStrip1.Enabled = trackBar1.Enabled = false;
                 pictureBox1.Image = null;
                 _bitmaps.Clear();
                 var bitmap = new Bitmap(openFileDialog1.FileName);
-                RunProcessing(bitmap);
+                await Task.Run(() => { RunProcessing(bitmap); });
+                menuStrip1.Enabled = trackBar1.Enabled = true;
+                sw.Stop();
+                Text = sw.Elapsed.ToString();
             }
         }
 
@@ -59,14 +65,25 @@ namespace ImageProcessingApp
         {
             var pixels = GetPixels(bitmap);
             var pixelsInStep = (bitmap.Width * bitmap.Height) / 100;
-            var currentPixelSet = new List<Pixel>(pixels.Count -  pixelsInStep);
+            var currentPixelSet = new List<Pixel>(pixels.Count - pixelsInStep);
 
             for (int i = 1; i < trackBar1.Maximum; i++)
             {
                 for (int j = 0; j < pixelsInStep; j++)
                 {
                     var index = _random.Next(pixels.Count);
+                    currentPixelSet.Add(pixels[index]);
+                    pixels.RemoveAt(index);
                 }
+                var currentBitmap = new Bitmap(bitmap.Width, bitmap.Height);
+                foreach (var pixel in currentPixelSet)
+                    currentBitmap.SetPixel(pixel.Point.Y, pixel.Point.X, pixel.Color);
+                _bitmaps.Add(currentBitmap);
+
+                this.Invoke(new Action(() =>
+                {
+                    Text = $"{i} %";
+                }));
 
             }
             _bitmaps.Add(bitmap);
@@ -82,8 +99,8 @@ namespace ImageProcessingApp
                 {
                     pixels.Add(new Pixel()
                     {
-                        Color = bitmap.GetPixel(j,i),
-                        Point = new Point() { X = i, Y = j  }
+                        Color = bitmap.GetPixel(i,j),
+                        Point = new Point() { X = i, Y = j }
                     });
                 }
             }
