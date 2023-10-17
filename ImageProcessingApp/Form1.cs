@@ -14,6 +14,7 @@ namespace ImageProcessingApp
     public partial class Form1 : Form
     {
         private List<Bitmap> _bitmaps;
+        private Random _random = new Random();
 
         public Form1()
         {
@@ -57,6 +58,18 @@ namespace ImageProcessingApp
         private void RunProcessing(Bitmap bitmap)
         {
             var pixels = GetPixels(bitmap);
+            var pixelsInStep = (bitmap.Width * bitmap.Height) / 100;
+            var currentPixelSet = new List<Pixel>(pixels.Count -  pixelsInStep);
+
+            for (int i = 1; i < trackBar1.Maximum; i++)
+            {
+                for (int j = 0; j < pixelsInStep; j++)
+                {
+                    var index = _random.Next(pixels.Count);
+                }
+
+            }
+            _bitmaps.Add(bitmap);
         }
 
         private List<Pixel> GetPixels(Bitmap bitmap)
